@@ -3558,3 +3558,56 @@ body {
     padding-bottom: 150px;
   }
 }
+
+/* ---------- Services: susun satu kolom di tablet & HP ---------- */
+@media (max-width: 900px) {
+  .asymmetric-services-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 32px;
+  }
+
+  .service-card.featured {
+    min-height: 420px;
+    padding: 32px 24px;
+  }
+
+  .services-sub-column {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .services-sub-column {
+    grid-template-columns: 1fr;
+  }
+
+  .service-card.featured {
+    min-height: 460px;
+    padding: 28px 20px;
+  }
+
+  .service-card.featured h3 {
+    font-size: 34px;
+  }
+
+  .featured-desc {
+    font-size: 14px;
+  }
+
+  .metric-chip {
+    font-size: 12px;
+  }
+
+  .service-card.sub-card {
+    padding: 22px 20px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .services-sub-column > .sub-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
