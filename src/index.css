@@ -3411,3 +3411,150 @@ footer {
     justify-content: center;
   }
 }
+/* ---------- Responsive fixes (tablet & HP) ---------- */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Tablet */
+@media (max-width: 1050px) {
+  .principles-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .stats-grid {
+    gap: 20px;
+  }
+}
+
+/* Tablet kecil & HP */
+@media (max-width: 760px) {
+  .capabilities-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-block: 14px;
+    row-gap: 12px;
+  }
+
+  .capabilities-pills {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 16px;
+  }
+
+  .capabilities-pills .pill {
+    font-size: 10px;
+  }
+
+  .capabilities-pills i {
+    display: none;
+  }
+
+  .telemetry-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+}
+
+/* HP */
+@media (max-width: 700px) {
+  .hero-content {
+    padding-top: calc(var(--header-h) + 36px);
+  }
+
+  .hero-bottom {
+    font-size: 10px;
+  }
+
+  .hero-bottom a {
+    font-size: 9px;
+  }
+
+  .capabilities-inner>span {
+    font-size: 10px;
+  }
+
+  .principles-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .benefit p,
+  .service-card>p,
+  .section-heading>p,
+  .hero-description,
+  .service-note {
+    font-size: 14px;
+  }
+
+  .service-link {
+    font-size: 12px;
+  }
+
+  .about-values {
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+
+  .hero-description {
+    max-width: none;
+  }
+
+  .tagline {
+    max-width: none;
+  }
+
+  .stat-card {
+    padding-inline: 4px;
+  }
+}
+
+/* HP kecil */
+@media (max-width: 400px) {
+  .container {
+    width: calc(100% - 32px);
+  }
+
+  .brand>span,
+  .header.scrolled .brand>span {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+  }
+
+  .brand img,
+  .header.scrolled .brand img {
+    height: 48px;
+    width: 48px;
+  }
+
+  .hero h1 {
+    font-size: clamp(40px, 12.5vw, 56px);
+  }
+
+  h2,
+  .about-copy h2,
+  .section-heading h2,
+  .contact h2 {
+    font-size: 32px;
+  }
+}
+
+.about > *,
+.contact-grid > *,
+.services-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .hero {
+    min-height: 680px;
+  }
+
+  .hero-content {
+    padding-bottom: 150px;
+  }
+}
