@@ -524,7 +524,7 @@ export default function App() {
               </span>
             </h2>
             <p className="intro-hint rv" style={{ "--i": 2 } as React.CSSProperties}>
-              <span /> Hover each word to discover its meaning
+              <span /> Tap or hover each word to discover its meaning
             </p>
             <div className="gold-rule" />
             <p className="intro-lead rv" style={{ "--i": 3 } as React.CSSProperties}>

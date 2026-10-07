@@ -3611,3 +3611,187 @@ body {
     grid-column: 1 / -1;
   }
 }
+
+/* ---------- Polish HP: lebih lega, ritme vertikal rapi ---------- */
+@media (max-width: 700px) {
+  :root {
+    --gutter: 24px;
+  }
+
+  .container {
+    width: calc(100% - (var(--gutter) * 2));
+  }
+
+  /* Ritme antar-section */
+  .section,
+  .why-section {
+    padding-block: 84px;
+  }
+
+  .intro-band {
+    padding: 100px 0 72px;
+  }
+
+  .contact {
+    padding-top: 84px;
+  }
+
+  /* Judul: jarak antarbaris rapat, jarak ke konten lega */
+  h1,
+  h2,
+  h3 {
+    line-height: 1.12;
+  }
+
+  h2,
+  .about-copy h2,
+  .section-heading h2,
+  .contact h2 {
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+
+  .section-heading>p,
+  .about-lead,
+  .about-body,
+  .contact-lead {
+    line-height: 1.75;
+  }
+
+  .section-heading>p {
+    margin-top: 18px;
+    font-size: 15px;
+  }
+
+  .eyebrow {
+    margin-bottom: 18px;
+  }
+
+  /* Judul "Berkah Induk Lautan" di intro */
+  .intro-words {
+    row-gap: 0;
+  }
+
+  .intro-word {
+    padding: 2px 4px 8px;
+  }
+
+  .intro-word-text {
+    font-size: clamp(44px, 14vw, 60px);
+  }
+
+  .intro-hint {
+    margin-top: 6px;
+  }
+
+  .intro-lead {
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  .intro-sub {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .intro-chips {
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  /* About */
+  .about {
+    gap: 52px;
+  }
+
+  .about-visual {
+    margin-right: 12px;
+  }
+
+  /* Kartu */
+  .principles-grid {
+    gap: 18px;
+  }
+
+  .principle,
+  .principle-card,
+  .principles-grid>* {
+    padding: 28px 24px;
+  }
+
+  .service-card>p,
+  .service-card.sub-card p {
+    min-height: 0;
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .service-card.sub-card h3 {
+    font-size: 24px;
+  }
+
+  .service-card.sub-card {
+    padding: 26px 24px;
+  }
+
+  .asymmetric-services-grid {
+    gap: 18px;
+  }
+
+  .services-sub-column {
+    gap: 18px;
+  }
+
+  .service-note {
+    margin-top: 36px;
+    text-align: left;
+    justify-content: center;
+    font-size: 13px;
+    padding-inline: 8px;
+  }
+
+  /* Statistik */
+  .stat-card {
+    padding: 30px 8px;
+  }
+
+  /* Form kontak */
+  .inquiry-form {
+    padding: 24px 20px;
+    gap: 16px;
+  }
+
+  .contact-details {
+    gap: 16px;
+  }
+
+  /* Footer */
+  footer {
+    gap: 24px;
+    padding-block: 36px;
+  }
+}
+
+/* HP kecil: tetap lega, gutter 20px */
+@media (max-width: 400px) {
+  :root {
+    --gutter: 20px;
+  }
+
+  .container {
+    width: calc(100% - 40px);
+  }
+
+  .section,
+  .why-section {
+    padding-block: 72px;
+  }
+
+  h2,
+  .about-copy h2,
+  .section-heading h2,
+  .contact h2 {
+    font-size: 30px;
+  }
+}
