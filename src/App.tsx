@@ -1,4 +1,6 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
+import { LANGS, LANG_PATH, SERVICE_TITLES, langFromPath, translations, type Lang } from "./i18n";
+import { applySeo } from "./seo";
 
 const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -28,7 +30,7 @@ function useRevealOnce<T extends HTMLElement>() {
 }
 
 /** Counts up to the numeric part of a value like "1,200+" or "24/7" once visible. */
-function CountUp({ value }: { value: string }) {
+function CountUp({ value, locale }: { value: string; locale: string }) {
   const match = value.match(/^(\d[\d,]*)(.*)$/);
   const target = match ? Number(match[1].replace(/,/g, "")) : 0;
   const suffix = match ? match[2] : "";
@@ -59,9 +61,11 @@ function CountUp({ value }: { value: string }) {
     };
   }, [target]);
 
+  // Pemisah ribuan mengikuti bahasa: 1.200 (ID) / 1,200 (EN).
+  const format = (num: number) => (hasComma ? num.toLocaleString(locale) : String(num));
+  const animated = match && !suffix.includes("/");
   const shown = n === null ? target : n;
-  const text = hasComma ? shown.toLocaleString("en-US") : String(shown);
-  return <span ref={ref} aria-label={value}>{match && !suffix.includes("/") ? text + suffix : value}</span>;
+  return <span ref={ref} aria-label={animated ? format(target) + suffix : value}>{animated ? format(shown) + suffix : value}</span>;
 }
 
 type IconName = "arrow" | "crew" | "ship" | "anchor" | "shield" | "chat" | "check" | "globe" | "compass" | "phone" | "mail" | "pin" | "clock" | "award";
@@ -158,28 +162,11 @@ const heroTexts = [
 ];
 
 // Arti nama perusahaan, muncul sebagai kartu saat tiap kata di-hover / di-tap / di-fokus.
+// Arti (gloss & meaning) per bahasa ada di i18n.ts → intro.words, urutannya sama.
 const introWords = [
-  {
-    word: "BERKAH",
-    phonetic: "/bər·kah/",
-    gloss: "Blessing",
-    meaning:
-      "A blessing that multiplies as it is shared. Every voyage we support begins with sincerity, so that good fortune reaches seafarers, shipowners, and the families waiting ashore.",
-  },
-  {
-    word: "INDUK",
-    phonetic: "/in·duk/",
-    gloss: "The Origin That Protects",
-    meaning:
-      "The source that nurtures and shelters. Like the mother ship at the heart of a fleet, we are the steady home base that our crews and partners can always return to.",
-  },
-  {
-    word: "LAUTAN",
-    phonetic: "/lau·tan/",
-    gloss: "The Boundless Ocean",
-    meaning:
-      "The open water that joins nations together. Indonesia's seas are our roots, and the world's horizons are where every journey is meant to arrive.",
-  },
+  { word: "BERKAH", phonetic: "/bər·kah/" },
+  { word: "INDUK", phonetic: "/in·duk/" },
+  { word: "LAUTAN", phonetic: "/lau·tan/" },
 ];
 
 const heroEffects = ["blur", "rise", "wipe", "flip", "zoom", "drift"] as const;
@@ -189,89 +176,18 @@ const heroEffects = ["blur", "rise", "wipe", "flip", "zoom", "drift"] as const;
 // Definisi animasinya ada di index.css pada blok "Hero image transitions".
 const heroImageEffects = ["fade", "wipe", "diagonal", "circle", "zoom"] as const;
 
-const services: {
-  title: string;
-  icon: IconName;
-  tag: string;
-  text: string;
-  detail: string;
-  metrics: string[];
-}[] = [
-  {
-    title: "Manning Agent",
-    icon: "crew",
-    tag: "PRIMARY CORE CAPABILITY",
-    text: "The right people. Ready for your next voyage.",
-    detail: "We connect qualified Indonesian seafarers with vessel operators worldwide. Our crewing support covers candidate selection, document coordination, and crew deployment, with fair recruitment and no fees charged to seafarers.",
-    metrics: ["1,200+ Verified Crew Pool", "Zero Placement Fee Policy", "MLC 2006 & STCW Certified"]
-  },
-  {
-    title: "Ship Broker",
-    icon: "globe",
-    tag: "COMMERCIAL BROKERAGE",
-    text: "Connecting vessels with the right opportunities.",
-    detail: "We support shipowners and operators in exploring vessel and chartering opportunities, facilitating communication between parties and coordinating the next steps of a maritime transaction.",
-    metrics: ["Chartering & Sales Matching", "Direct Commercial Liaison", "Cross-Strait Deal Coordination"]
-  },
-  {
-    title: "Ship Management",
-    icon: "ship",
-    tag: "TECHNICAL & OPERATIONS",
-    text: "Reliable operations. Complete peace of mind.",
-    detail: "Our ship management services support the coordination of vessel operations, crew requirements, maintenance planning, and compliance needs. Speak with us about a solution tailored to your fleet.",
-    metrics: ["Preventive Maintenance", "Flag State Regulatory Compliance", "Safety & ISM Auditing Support"]
-  },
-  {
-    title: "Port Agent",
-    icon: "anchor",
-    tag: "PORT HUSBANDRY & CLEARANCE",
-    text: "Seamless port calls, from arrival to departure.",
-    detail: "We coordinate port-call requirements, local communications, documentation, and vessel support to help owners, masters, and operators navigate arrival and departure efficiently.",
-    metrics: ["24/7 Berth & Customs Clearance", "Bunkering & Provisions Dispatch", "Crew Change & Husbandry Logistics"]
-  },
-];
-
-const benefits = [
-  {
-    number: "01",
-    title: "Ready-to-join crew",
-    text: "Qualified seafarers, rigorously vetted, medically verified, and prepared for immediate deployment on international trade routes.",
-    icon: "crew" as const,
-    highlight: "Pre-screened & Medical Cleared"
-  },
-  {
-    number: "02",
-    title: "One point of contact",
-    text: "Direct, crystal-clear operational coordination around the clock. A dedicated maritime partner that answers whenever your vessel calls.",
-    icon: "chat" as const,
-    highlight: "24/7 Dedicated Voyage Desk"
-  },
-  {
-    number: "03",
-    title: "MLC-compliant contracts",
-    text: "Fair, transparent terms designed in full compliance with the Maritime Labour Convention 2006 and international maritime laws.",
-    icon: "shield" as const,
-    highlight: "100% Ethical & Legal Standards"
-  },
-  {
-    number: "04",
-    title: "No fee to seafarers",
-    text: "Ethical recruitment without economic barriers. We ensure candidate integrity through merit-based placement with zero seafarer fees.",
-    icon: "check" as const,
-    highlight: "Strict Zero-Fee Policy"
-  },
-];
-
-const stats = [
-  { value: "1,200+", label: "Qualified Seafarers", sub: "Active, vetted talent pool ready for global voyages" },
-  { value: "100%", label: "MLC 2006 Compliance", sub: "Strict adherence to international maritime labor standards" },
-  { value: "50+", label: "Global Port Calls", sub: "Direct operational coordination across major sea corridors" },
-  { value: "24/7", label: "Operations Support", sub: "Continuous shore-to-vessel dispatch and husbanding assistance" },
-];
+// Teks layanan, keunggulan, dan statistik per bahasa ada di i18n.ts; di sini hanya bagian yang sama untuk semua bahasa.
+const serviceIcons: IconName[] = ["crew", "globe", "ship", "anchor"];
+const serviceValues = ["manning", "broker", "management", "port"];
+const benefitIcons: IconName[] = ["crew", "chat", "shield", "check"];
+const statValues = ["1,200+", "100%", "50+", "24/7"];
 
 const emptyForm = { name: "", email: "", company: "", service: "", message: "" };
 
-export default function App() {
+export default function App({ initialLang }: { initialLang: Lang }) {
+  const [lang, setLang] = useState<Lang>(initialLang);
+  const t = translations[lang];
+  const services = SERVICE_TITLES.map((title, index) => ({ title, icon: serviceIcons[index], ...t.services.items[index] }));
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeService, setActiveService] = useState<number | null>(null);
   const [slide, setSlide] = useState(0);
@@ -369,6 +285,27 @@ export default function App() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Bahasa mengikuti URL (/ = Indonesia, /en = Inggris) supaya tiap bahasa punya halaman sendiri untuk SEO.
+  useEffect(() => {
+    applySeo(lang);
+  }, [lang]);
+
+  useEffect(() => {
+    const onPop = () => setLang(langFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const switchLang = (next: Lang) => (event: MouseEvent<HTMLAnchorElement>) => {
+    // Biarkan Ctrl/Cmd/Shift+klik membuka tab baru seperti link biasa.
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    setMenuOpen(false);
+    if (next === lang) return;
+    window.history.pushState(null, "", LANG_PATH[next] + window.location.hash);
+    setLang(next);
+  };
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     setSent(true);
@@ -379,29 +316,47 @@ export default function App() {
     <>
       <header className={scrolled ? "header scrolled" : "header"}>
         <div className="container nav">
-          <a href="#home" className="brand" aria-label="BIL home">
+          <a href="#home" className="brand" aria-label={t.nav.brandLabel}>
             <img src="/images/bil-logo.png" alt="BIL — Berkah Induk Lautan" />
             <span>BERKAH<br />INDUK LAUTAN</span>
           </a>
-          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-controls="main-nav" aria-label="Toggle navigation">
-            {menuOpen ? "✕" : "☰"}
-          </button>
-          <nav id="main-nav" className={menuOpen ? "nav-links open" : "nav-links"} aria-label="Main navigation">
-            {[["Home", "home"], ["About Us", "about"], ["Our Services", "services"]].map(([label, id]) => (
-              <a
-                key={id}
-                className={activeNav === id ? "active" : undefined}
-                aria-current={activeNav === id ? "true" : undefined}
-                onClick={() => setMenuOpen(false)}
-                href={`#${id}`}
-              >
-                {label}
+          <div className="nav-end">
+            <nav id="main-nav" className={menuOpen ? "nav-links open" : "nav-links"} aria-label={t.nav.main}>
+              {[[t.nav.home, "home"], [t.nav.about, "about"], [t.nav.services, "services"]].map(([label, id]) => (
+                <a
+                  key={id}
+                  className={activeNav === id ? "active" : undefined}
+                  aria-current={activeNav === id ? "true" : undefined}
+                  onClick={() => setMenuOpen(false)}
+                  href={`#${id}`}
+                >
+                  {label}
+                </a>
+              ))}
+              <a className="button small" href="#contact" onClick={() => setMenuOpen(false)}>
+                {t.nav.cta} <Icon name="arrow" />
               </a>
-            ))}
-            <a className="button small" href="#contact" onClick={() => setMenuOpen(false)}>
-              {"Let's Talk"} <Icon name="arrow" />
-            </a>
-          </nav>
+            </nav>
+            <div className="lang-switch" role="group" aria-label={t.nav.language}>
+              {LANGS.map((code) => (
+                <a
+                  key={code}
+                  href={LANG_PATH[code]}
+                  hrefLang={code}
+                  lang={code}
+                  className={code === lang ? "active" : undefined}
+                  aria-current={code === lang ? "true" : undefined}
+                  title={code === "id" ? "Bahasa Indonesia" : "English"}
+                  onClick={switchLang(code)}
+                >
+                  {code.toUpperCase()}
+                </a>
+              ))}
+            </div>
+            <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-controls="main-nav" aria-label={t.nav.toggle}>
+              {menuOpen ? "✕" : "☰"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -474,18 +429,18 @@ export default function App() {
           <div className="container capabilities-inner">
             <div className="telemetry-badge">
               <span className="telemetry-dot" />
-              <span>INDONESIA MARITIME CORRIDOR • 06°12'S 106°48'E</span>
+              <span>{t.strip.corridor} • 06°12'S 106°48'E</span>
             </div>
             <div className="capabilities-pills">
-              <span className="pill"><Icon name="crew" /> CREWING LOGISTICS</span>
+              <span className="pill"><Icon name="crew" /> {t.strip.pills[0]}</span>
               <i />
-              <span className="pill"><Icon name="ship" /> FLEET OPERATIONS</span>
+              <span className="pill"><Icon name="ship" /> {t.strip.pills[1]}</span>
               <i />
-              <span className="pill"><Icon name="anchor" /> PORT AGENCY</span>
+              <span className="pill"><Icon name="anchor" /> {t.strip.pills[2]}</span>
             </div>
             <div className="global-note">
               <Icon name="compass" />
-              <span>Sunda & Malacca Straits Gateway</span>
+              <span>{t.strip.gateway}</span>
             </div>
           </div>
         </div>
@@ -495,11 +450,11 @@ export default function App() {
           <div className="container intro-inner reveal-group" ref={introRef}>
             <div className="editorial-meta rv" style={{ "--i": 0 } as React.CSSProperties}>
               <span className="meta-line" />
-              <span className="meta-tag">FULL SERVICE MARITIME AGENCY</span>
+              <span className="meta-tag">{t.intro.meta}</span>
               <span className="meta-line" />
             </div>
             <h2 className="intro-title rv" style={{ "--i": 1 } as React.CSSProperties}>
-              <span className="intro-pre">WE ARE</span>
+              <span className="intro-pre">{t.intro.pre}</span>
               <span className="intro-words">
                 {introWords.map((item, index) => (
                   <button
@@ -516,25 +471,25 @@ export default function App() {
                         <b>{item.word}</b>
                         <i>{item.phonetic}</i>
                       </span>
-                      <span className="word-pop-gloss">{item.gloss}</span>
-                      <span className="word-pop-text">{item.meaning}</span>
+                      <span className="word-pop-gloss">{t.intro.words[index].gloss}</span>
+                      <span className="word-pop-text">{t.intro.words[index].meaning}</span>
                     </span>
                   </button>
                 ))}
               </span>
             </h2>
             <p className="intro-hint rv" style={{ "--i": 2 } as React.CSSProperties}>
-              <span /> Tap or hover each word to discover its meaning
+              <span /> {t.intro.hint}
             </p>
             <div className="gold-rule" />
             <p className="intro-lead rv" style={{ "--i": 3 } as React.CSSProperties}>
-              BIL is a trusted maritime partner for shipowners, vessel charterers, and cargo interests along Indonesia’s vital maritime routes and beyond.
+              {t.intro.lead}
             </p>
             <p className="intro-sub rv" style={{ "--i": 4 } as React.CSSProperties}>
-              When appointed as agents for your vessel, crew, or cargo, we become your dedicated onshore headquarters for every nautical mile of the voyage.
+              {t.intro.sub}
             </p>
             <ul className="intro-chips rv" style={{ "--i": 5 } as React.CSSProperties}>
-              {["Crewing", "Ship Agency", "Port Services", "Cargo Support"].map((chip) => (
+              {t.intro.chips.map((chip) => (
                 <li key={chip}>{chip}</li>
               ))}
             </ul>
@@ -547,14 +502,14 @@ export default function App() {
             <div className="about-visual">
               <img
                 src="https://images.unsplash.com/photo-1599640842225-85d111c60e6b?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8a2FwYWwlMjBwZXNpYXJ8ZW58MHx8MHx8fDA%3D"
-                alt="Kapal pesiar di laut"
+                alt={t.about.imageAlt}
                 loading="lazy"
               />
               <div className="about-chip">
                 <span className="status-ping" />
                 <div>
-                  <strong>Indonesian Seafarers</strong>
-                  <small>Placed with operators worldwide</small>
+                  <strong>{t.about.chipTitle}</strong>
+                  <small>{t.about.chipText}</small>
                 </div>
               </div>
             </div>
@@ -562,39 +517,34 @@ export default function App() {
 
           <div className="about-copy">
             <div className="eyebrow rv" style={{ "--i": 0 } as React.CSSProperties}>
-              <span className="eyebrow-num">01</span> / WHO WE ARE
+              <span className="eyebrow-num">01</span> / {t.about.eyebrow}
             </div>
-            <h2 className="rv" style={{ "--i": 1 } as React.CSSProperties}>Welcome to BIL.<br /><span>Your partner at sea.</span></h2>
+            <h2 className="rv" style={{ "--i": 1 } as React.CSSProperties}>{t.about.title1}<br /><span>{t.about.title2}</span></h2>
             <p className="about-lead rv" style={{ "--i": 2 } as React.CSSProperties}>
-              Great voyages begin with the right people. At Berkah Induk Lautan, we connect qualified Indonesian seafarers with ship operators around the world.
+              {t.about.lead}
             </p>
             <p className="about-body rv" style={{ "--i": 3 } as React.CSSProperties}>
-              From crewing to comprehensive maritime services, we bring a people-first approach, dependable expertise, and a shared commitment to every journey. We coordinate deployment logistics, regulatory compliance, and port calls so your vessels operate with maximum efficiency.
+              {t.about.body}
             </p>
 
             <div className="about-pillars rv" style={{ "--i": 4 } as React.CSSProperties}>
-              <div className="pillar-item">
-                <div className="pillar-icon"><Icon name="check" /></div>
-                <div>
-                  <h4>People-First Approach</h4>
-                  <p>Ethical recruitment, fair crew welfare, and transparent placement.</p>
+              {t.about.pillars.map((pillar) => (
+                <div className="pillar-item" key={pillar.title}>
+                  <div className="pillar-icon"><Icon name="check" /></div>
+                  <div>
+                    <h4>{pillar.title}</h4>
+                    <p>{pillar.text}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="pillar-item">
-                <div className="pillar-icon"><Icon name="check" /></div>
-                <div>
-                  <h4>Trusted Partnerships</h4>
-                  <p>Long-term relationships with international principals and shipowners.</p>
-                </div>
-              </div>
+              ))}
             </div>
 
             <div className="about-actions-row rv" style={{ "--i": 5 } as React.CSSProperties}>
               <a className="button" href="#contact">
-                {"Let's navigate the future together"} <Icon name="arrow" />
+                {t.about.cta} <Icon name="arrow" />
               </a>
               <a className="text-link" href="#services">
-                Explore capabilities <span>↗</span>
+                {t.about.link} <span>↗</span>
               </a>
             </div>
           </div>
@@ -606,25 +556,25 @@ export default function App() {
             <div className="section-heading">
               <div>
                 <div className="eyebrow">
-                  <span className="eyebrow-num">02</span> / THE BIL DIFFERENCE
+                  <span className="eyebrow-num">02</span> / {t.why.eyebrow}
                 </div>
-                <h2>Why principals<br />work with us.</h2>
+                <h2>{t.why.title1}<br />{t.why.title2}</h2>
               </div>
               <div className="heading-sub-box">
                 <p>
-                  More than a service provider.<br />A dedicated maritime partner invested in your fleet’s operational success.
+                  {t.why.sub1}<br />{t.why.sub2}
                 </p>
               </div>
             </div>
 
             <div className="principles-grid">
-              {benefits.map((benefit) => (
-                <article className="principle-card" key={benefit.title}>
+              {t.why.items.map((benefit, index) => (
+                <article className="principle-card" key={index}>
                   <div className="principle-accent-bar" />
                   <div className="principle-header">
-                    <span className="principle-idx">{benefit.number}</span>
+                    <span className="principle-idx">0{index + 1}</span>
                     <div className="principle-icon-box">
-                      <Icon name={benefit.icon} />
+                      <Icon name={benefitIcons[index]} />
                     </div>
                   </div>
                   <h3>{benefit.title}</h3>
@@ -644,7 +594,7 @@ export default function App() {
           <img
             className="visual-break-img"
             src="/images/world-map.jpg"
-            alt="Peta dunia dengan jalur pelayaran global"
+            alt={t.visual.mapAlt}
             width={1905}
             height={825}
             loading="lazy"
@@ -653,16 +603,16 @@ export default function App() {
           <div className="container visual-break-content">
             <div className="visual-meta-badge">
               <Icon name="compass" />
-              <span>ARCHIPELAGIC EXCELLENCE • STRATEGIC SHIPPING CORRIDOR</span>
+              <span>{t.visual.badge}</span>
             </div>
-            <h2>Connecting Indonesia’s Maritime Power to Global Horizons.</h2>
+            <h2>{t.visual.title}</h2>
             <p>
-              Safeguarding seafarer welfare, accelerating fleet readiness, and delivering seamless port calls across the Indo-Pacific corridor.
+              {t.visual.text}
             </p>
             <div className="visual-coords">
               <span>LAT 06°08'S — LONG 106°53'E</span>
               <span className="coord-dot">•</span>
-              <span>PORT OF TANJUNG PRIOK & ARCHIPELAGIC SEA LANES</span>
+              <span>{t.visual.port}</span>
             </div>
           </div>
         </section>
@@ -672,11 +622,11 @@ export default function App() {
           <div className="section-heading">
             <div>
               <div className="eyebrow">
-                <span className="eyebrow-num">03</span> / WHAT WE DO
+                <span className="eyebrow-num">03</span> / {t.services.eyebrow}
               </div>
-              <h2>A complete maritime<br />partner. <span>One BIL.</span></h2>
+              <h2>{t.services.title1}<br />{t.services.title2} <span>{t.services.accent}</span></h2>
             </div>
-            <p>Practical solutions for your people,<br />your vessels, and your business.</p>
+            <p>{t.services.sub1}<br />{t.services.sub2}</p>
           </div>
 
           <div className="asymmetric-services-grid">
@@ -686,7 +636,7 @@ export default function App() {
               onClick={() => setActiveService(0)}
               role="button"
               tabIndex={0}
-              aria-label="Learn more about Manning Agent"
+              aria-label={t.services.learnMore(services[0].title)}
             >
               <div className="featured-card-bg" />
               <div className="featured-card-overlay" />
@@ -706,7 +656,7 @@ export default function App() {
                   ))}
                 </div>
                 <div className="featured-cta">
-                  <span>Explore crewing & recruitment solutions</span>
+                  <span>{t.services.featuredCta}</span>
                   <Icon name="arrow" />
                 </div>
               </div>
@@ -719,7 +669,7 @@ export default function App() {
                   className="service-card sub-card"
                   key={service.title}
                   onClick={() => setActiveService(index + 1)}
-                  aria-label={`Learn more about ${service.title}`}
+                  aria-label={t.services.learnMore(service.title)}
                 >
                   <div className="sub-card-top">
                     <div className="sub-icon-wrap">
@@ -731,7 +681,7 @@ export default function App() {
                   <h3>{service.title}</h3>
                   <p>{service.text}</p>
                   <div className="service-link">
-                    <span>Explore service details</span>
+                    <span>{t.services.detailLink}</span>
                     <Icon name="arrow" />
                   </div>
                 </button>
@@ -740,7 +690,7 @@ export default function App() {
           </div>
 
           <div className="service-note">
-            <span className="status-dot" /> Supporting your journey, from the first connection to the next port.
+            <span className="status-dot" /> {t.services.note}
           </div>
         </section>
 
@@ -749,16 +699,16 @@ export default function App() {
           <div className="container reveal-group" ref={statsRef}>
             <div className="stats-intro">
               <div className="eyebrow light">
-                <span className="eyebrow-num">04</span> / MEASURABLE IMPACT
+                <span className="eyebrow-num">04</span> / {t.stats.eyebrow}
               </div>
-              <h2>Built on Maritime Standards at Scale</h2>
+              <h2>{t.stats.title}</h2>
               <span className="stats-coords" aria-hidden="true">06°12′S — 106°48′E</span>
             </div>
             <div className="stats-grid">
-              {stats.map((item, index) => (
-                <div className="stat-card reveal-item" style={{ "--i": index } as React.CSSProperties} key={item.label}>
+              {t.stats.items.map((item, index) => (
+                <div className="stat-card reveal-item" style={{ "--i": index } as React.CSSProperties} key={index}>
                   <span className="stat-idx" aria-hidden="true">0{index + 1}</span>
-                  <div className="stat-value"><CountUp value={item.value} /></div>
+                  <div className="stat-value"><CountUp value={statValues[index]} locale={t.stats.numberLocale} /></div>
                   <div className="stat-title">{item.label}</div>
                   <p className="stat-sub">{item.sub}</p>
                 </div>
@@ -773,12 +723,12 @@ export default function App() {
             <div className="contact-top reveal-item">
               <div>
                 <div className="eyebrow light">
-                  <span className="eyebrow-num">05</span> / LET’S CHART A COURSE TOGETHER
+                  <span className="eyebrow-num">05</span> / {t.contact.eyebrow}
                 </div>
-                <h2>Your next opportunity<br />is on the <span>horizon.</span></h2>
+                <h2>{t.contact.title1}<br />{t.contact.title2}<span>{t.contact.accent}</span></h2>
               </div>
               <p className="contact-lead">
-                Share a few details and our operations team will follow up promptly with structured next steps for your vessel, crew, or cargo.
+                {t.contact.lead}
               </p>
             </div>
 
@@ -786,67 +736,50 @@ export default function App() {
               <form className="inquiry-form reveal-item" style={{ "--i": 1 } as React.CSSProperties} onSubmit={onSubmit} noValidate={false}>
                 <div className="field">
                   <input id="name" name="name" required placeholder=" " value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-                  <label htmlFor="name">Full name</label>
+                  <label htmlFor="name">{t.contact.name}</label>
                 </div>
                 <div className="field">
                   <input id="email" name="email" type="email" required placeholder=" " value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-                  <label htmlFor="email">Work email</label>
+                  <label htmlFor="email">{t.contact.email}</label>
                 </div>
                 <div className="field">
                   <input id="company" name="company" placeholder=" " value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} />
-                  <label htmlFor="company">Company / vessel name</label>
+                  <label htmlFor="company">{t.contact.company}</label>
                 </div>
                 <div className="field select-field">
                   <select id="service" name="service" required value={form.service} onChange={(event) => setForm({ ...form, service: event.target.value })}>
-                    <option value="" disabled>Select a service</option>
-                    <option value="manning">Manning Agent (Crew Recruitment & Placement)</option>
-                    <option value="broker">Ship Broker (Commercial Chartering & Sales)</option>
-                    <option value="management">Ship Management (Fleet Operations & Maintenance)</option>
-                    <option value="port">Port Agent (Port Husbandry & Clearances)</option>
+                    <option value="" disabled>{t.contact.servicePlaceholder}</option>
+                    {services.map((service, index) => (
+                      <option key={serviceValues[index]} value={serviceValues[index]}>{service.option}</option>
+                    ))}
                   </select>
-                  <label htmlFor="service" className="select-label">How can we help</label>
+                  <label htmlFor="service" className="select-label">{t.contact.service}</label>
                 </div>
                 <div className="field field-full">
                   <textarea id="message" name="message" rows={4} required placeholder=" " value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} />
-                  <label htmlFor="message">Tell us about your voyage or vessel requirements</label>
+                  <label htmlFor="message">{t.contact.message}</label>
                 </div>
                 <div className="form-actions">
-                  <button className="button" type="submit">Send inquiry <Icon name="arrow" /></button>
-                  {sent && <p className="form-success" role="status">✓ Thank you. Your message is received and our desk will be in touch.</p>}
+                  <button className="button" type="submit">{t.contact.submit} <Icon name="arrow" /></button>
+                  {sent && <p className="form-success" role="status">{t.contact.success}</p>}
                 </div>
               </form>
 
               <div id="contact-details" className="contact-details-channels reveal-item" style={{ "--i": 2 } as React.CSSProperties}>
-                <div className="channel-box">
-                  <div className="channel-icon-wrap"><Icon name="phone" /></div>
-                  <div>
-                    <span className="channel-sub">01 / TELEPHONE & OPERATIONS</span>
-                    <h4>Direct Operations Line</h4>
-                    <p>Informasi telepon segera tersedia</p>
+                {t.contact.channels.map((channel, index) => (
+                  <div className="channel-box" key={index}>
+                    <div className="channel-icon-wrap"><Icon name={(["phone", "mail", "pin"] as const)[index]} /></div>
+                    <div>
+                      <span className="channel-sub">{channel.sub}</span>
+                      <h4>{channel.title}</h4>
+                      <p>{channel.text}</p>
+                    </div>
                   </div>
-                </div>
-
-                <div className="channel-box">
-                  <div className="channel-icon-wrap"><Icon name="mail" /></div>
-                  <div>
-                    <span className="channel-sub">02 / ELECTRONIC DISPATCH</span>
-                    <h4>Chartering & Manning Desk</h4>
-                    <p>Informasi email segera tersedia</p>
-                  </div>
-                </div>
-
-                <div className="channel-box">
-                  <div className="channel-icon-wrap"><Icon name="pin" /></div>
-                  <div>
-                    <span className="channel-sub">03 / OFFICE LOCATION</span>
-                    <h4>Headquarters Indonesia</h4>
-                    <p>Informasi alamat segera tersedia</p>
-                  </div>
-                </div>
+                ))}
 
                 <div className="ops-dispatch-notice">
                   <Icon name="clock" />
-                  <span>Detail kontak resmi akan ditampilkan setelah dikonfirmasi oleh BIL. Dukungan operasional beroperasi 24/7 untuk kapal aktif.</span>
+                  <span>{t.contact.notice}</span>
                 </div>
               </div>
             </div>
@@ -856,18 +789,18 @@ export default function App() {
                 <img src="/images/bil-logo.png" alt="BIL" />
                 <div className="footer-brand-text">
                   <span className="footer-brand-title">BERKAH INDUK LAUTAN</span>
-                  <span className="footer-brand-sub">YOUR TRUSTED MARITIME PARTNER</span>
+                  <span className="footer-brand-sub">{t.footer.tagline}</span>
                 </div>
               </a>
               <div className="footer-links">
-                <a href="#home">Home</a>
-                <a href="#about">About Us</a>
-                <a href="#services">Our Services</a>
-                <a href="#contact">Contact</a>
+                <a href="#home">{t.nav.home}</a>
+                <a href="#about">{t.nav.about}</a>
+                <a href="#services">{t.nav.services}</a>
+                <a href="#contact">{t.nav.contact}</a>
               </div>
               <div className="footer-bottom-row">
-                <span>2026 © PT Berkah Induk Lautan. All rights reserved.</span>
-                <a href="#home" className="footer-top-link">Back to top ↑</a>
+                <span>2026 © PT Berkah Induk Lautan. {t.footer.rights}</span>
+                <a href="#home" className="footer-top-link">{t.footer.top} ↑</a>
               </div>
             </footer>
           </div>
@@ -877,12 +810,12 @@ export default function App() {
       {activeService !== null && (
         <div className="modal-backdrop" onClick={() => setActiveService(null)}>
           <div className="service-modal" role="dialog" aria-modal="true" aria-labelledby="service-title" onClick={(event) => event.stopPropagation()}>
-            <button className="modal-close" autoFocus onClick={() => setActiveService(null)} aria-label="Close service details">✕</button>
+            <button className="modal-close" autoFocus onClick={() => setActiveService(null)} aria-label={t.modal.close}>✕</button>
             <Icon name={services[activeService].icon} />
-            <div className="eyebrow">BIL MARITIME SERVICES</div>
+            <div className="eyebrow">{t.modal.eyebrow}</div>
             <h2 id="service-title">{services[activeService].title}</h2>
             <p>{services[activeService].detail}</p>
-            <a className="button" href="#contact" onClick={() => setActiveService(null)}>Discuss your needs <Icon name="arrow" /></a>
+            <a className="button" href="#contact" onClick={() => setActiveService(null)}>{t.modal.cta} <Icon name="arrow" /></a>
           </div>
         </div>
       )}
